@@ -140,9 +140,11 @@ while look:
                     dist = 2*j + 1
                 else:
                     dist = 2*j + 2
-                grain_dict[i][neigh[p]] = [dist, bl]
-                grain_dict[neigh[p]][i] = [dist, bl]
+                grain_dict[i][neigh[p]] = [dist, bl, dist]
+                grain_dict[neigh[p]][i] = [dist, bl, dist]
             else:
+                grain_dict[i][neigh[p]][0] = (grain_dict[i][neigh[p]][0]*grain_dict[i][neigh[p]][1] + dist*bl)*1.0/(grain_dict[i][neigh[p]][1] + bl)
+                grain_dict[neigh[p]][i][0] = (grain_dict[neigh[p]][i][0]*grain_dict[neigh[p]][i][1] + dist*bl)*1.0/(grain_dict[neigh[p]][i][1] + bl)
                 grain_dict[i][neigh[p]][1] += bl
                 grain_dict[neigh[p]][i][1] += bl
         #print(sub)
@@ -155,4 +157,34 @@ while look:
         look = False
 plt.imshow(lp)
 plt.show()
-print(grain_dict)    
+print(grain_dict)
+
+def percSearch(LHS, RHS, seen, neighDict, thresh):
+    look = True
+    itera = 0
+    while(look):
+        if(len(RHS) == 0):
+            return False
+        grain = RHS.pop(0)
+        seen.append(grain)
+        neighs = list(neighDict[grain].keys())
+        for i in range(len(neighs)):
+            if(neighDict[grain][neighs[i]][2] < thresh):
+                if(neighs[i] in LHS):
+                    return True
+                if(not neighs[i] in seen):
+                    if(not neighs[i] in RHS):
+                        RHS.append(neighs[i])
+        itera += 1
+
+for i in range(1, 10):
+    thresh = i
+    LHS = np.unique(labeled_pred[:,0:thresh])
+    RHS = np.unique(labeled_pred[:,-thresh:])
+    seen = []
+    LHS = LHS[LHS > 0]
+    RHS = RHS[RHS > 0]
+    LHS = LHS.tolist()
+    RHS = RHS.tolist()
+    print(i)
+    print(percSearch(LHS, RHS, seen, grain_dict, thresh))
